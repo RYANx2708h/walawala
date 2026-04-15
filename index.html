@@ -73,36 +73,33 @@
 
     <br>
 
-    <button onclick="toggleMusic()">Play / Pause</button>
+    <button onclick="playMusic()">Play</button>
+<button onclick="pauseMusic()">Pause</button>
   </div>
 
   <audio id="music" loop></audio>
 
   <script>
-    const music = document.getElementById("music");
+const music = document.getElementById("music");
 
-    function playMusic() {
-      music.play();
-    }
+function playMusic() {
+  music.play();
+}
 
-    function gantiLagu(src) {
-      if (!src) return;
-      music.src = src;
-      music.play();
-      document.getElementById("judul").innerText = src.split("/").pop();
-    }
+function pauseMusic() {
+  music.pause();
+}
 
-    function toggleMusic() {
-      if (music.paused) {
-        music.play();
-      } else {
-        music.pause();
-      }
-    }
+function gantiLagu(src) {
+  if (!src) return;
+  music.src = src;
+  music.play();
+  document.getElementById("judul").innerText = src.split("/").pop();
+}
 
-    function aturVolume(v) {
-      music.volume = v;
-    }
+function aturVolume(v) {
+  music.volume = v;
+}
   </script>
 
 </body>
