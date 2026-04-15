@@ -42,9 +42,24 @@
 <body onclick="playMusic()">
 
   <div class="box">
-    <h1>🎧 My Music</h1>
-    <p>tap layar untuk mulai musik</p>
-    <button onclick="toggleMusic()">Play / Pause</button>
+  <h1>🎧 My Music</h1>
+
+  <p id="judul">Pilih lagu...</p>
+
+  <select onchange="gantiLagu(this.value)">
+    <option value="">-- pilih lagu --</option>
+    <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3">Lagu 1</option>
+    <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3">Lagu 2</option>
+    <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3">Lagu 3</option>
+  </select>
+
+  <br><br>
+
+  <input type="range" min="0" max="1" step="0.1" onchange="aturVolume(this.value)">
+
+  <br><br>
+
+  <button onclick="toggleMusic()">Play / Pause</button>
   </div>
 
   <audio id="music" loop>
