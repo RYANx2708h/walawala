@@ -2,205 +2,180 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Spotify Style Player</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Music Player Simple</title>
 
 <style>
 body {
   margin: 0;
-  font-family: 'Poppins', sans-serif;
-  background: linear-gradient(270deg,#0f2027,#203a43,#2c5364);
-  background-size: 400% 400%;
-  animation: bg 12s infinite;
+  font-family: Arial;
+  background: #121212;
   color: white;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
 }
 
-@keyframes bg {
-  0% {background-position: 0%;}
-  50% {background-position: 100%;}
-  100% {background-position: 0%;}
+header {
+  padding: 15px;
+  text-align: center;
+  background: #1db954;
+  font-size: 20px;
+  font-weight: bold;
 }
 
-.player {
-  width: 340px;
-  background: rgba(0,0,0,0.6);
-  padding: 20px;
-  border-radius: 20px;
-  backdrop-filter: blur(15px);
+.search-box {
+  padding: 15px;
+  text-align: center;
 }
 
-img {
-  width: 100%;
-  border-radius: 15px;
-}
-
-h3 {
-  margin: 10px 0;
-}
-
-.controls button {
-  margin: 5px;
-  padding: 10px;
-  border-radius: 10px;
+.search-box input {
+  width: 85%;
+  padding: 12px;
+  border-radius: 25px;
   border: none;
-  cursor: pointer;
+  outline: none;
 }
 
-input[type="range"] {
-  width: 100%;
-}
-
-.playlist, .search-result {
-  max-height: 120px;
-  overflow-y: auto;
-  margin-top: 10px;
+.results {
+  padding: 10px;
 }
 
 .song {
-  padding: 5px;
+  padding: 12px;
+  margin: 6px 0;
+  background: #1e1e1e;
+  border-radius: 10px;
   cursor: pointer;
+  transition: 0.2s;
 }
 
 .song:hover {
-  background: rgba(255,255,255,0.2);
+  background: #333;
 }
 
-input[type="text"] {
+.player {
+  position: fixed;
+  bottom: 0;
   width: 100%;
-  padding: 8px;
-  border-radius: 10px;
+  background: #181818;
+  padding: 10px;
+  text-align: center;
+}
+
+button {
+  margin: 5px;
+  padding: 10px;
   border: none;
+  border-radius: 50%;
+  background: #1db954;
+  color: white;
+  cursor: pointer;
+}
+
+input[type="file"] {
+  margin: 10px;
 }
 </style>
 </head>
 
 <body>
 
+<header>🎧 Music Player</header>
+
+<div class="search-box">
+  <input type="text" id="search" placeholder="Cari lagu & klik langsung play...">
+</div>
+
+<div style="text-align:center;">
+  <input type="file" id="upload" accept="audio/*">
+</div>
+
+<div class="results" id="results"></div>
+
 <div class="player">
+  <p id="nowPlaying">Belum ada lagu</p>
+  <audio id="audio" controls></audio><br>
 
-<img id="cover" src="https://via.placeholder.com/300x300?text=Music">
-
-<h3 id="judul">No song</h3>
-
-<!-- SEARCH -->
-<input type="text" placeholder="Cari lagu..." onkeyup="searchMusic(this.value)">
-
-<div class="search-result" id="search"></div>
-
-<!-- PLAYLIST -->
-<div class="playlist" id="playlist"></div>
-
-<!-- CONTROLS -->
-<div class="controls">
   <button onclick="prev()">⏮</button>
-  <button onclick="play()">▶</button>
-  <button onclick="pause()">⏸</button>
+  <button onclick="audio.play()">▶️</button>
   <button onclick="next()">⏭</button>
 </div>
 
-<!-- PROGRESS -->
-<input type="range" id="progress" value="0" onchange="seek(this.value)">
-
-<!-- VOLUME -->
-<input type="range" min="0" max="1" step="0.1" onchange="volume(this.value)">
-
-<audio id="audio"></audio>
-
-</div>
-
 <script>
-let audio = document.getElementById("audio");
-let playlist = [
-  {
-    name: "Chill Vibes",
-    src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-    cover: "https://picsum.photos/300?1"
-  },
-  {
-    name: "Night Beat",
-    src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
-    cover: "https://picsum.photos/300?2"
-  }
+let songs = [
+  { name: "SoundHelix 1", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
+  { name: "SoundHelix 2", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" }
 ];
 
-let index = 0;
+let current = 0;
 
-function renderPlaylist() {
-  let list = document.getElementById("playlist");
-  list.innerHTML = "";
-  playlist.forEach((s,i)=>{
-    list.innerHTML += `<div class="song" onclick="playIndex(${i})">${s.name}</div>`;
+const audio = document.getElementById("audio");
+const results = document.getElementById("results");
+const search = document.getElementById("search");
+const nowPlaying = document.getElementById("nowPlaying");
+
+/* TAMPILKAN LIST */
+function show(list) {
+  results.innerHTML = "";
+  list.forEach((song, index) => {
+    const div = document.createElement("div");
+    div.className = "song";
+    div.innerText = song.name;
+
+    div.onclick = () => {
+      current = songs.indexOf(song);
+      playSong();
+    };
+
+    results.appendChild(div);
   });
 }
 
-function playIndex(i) {
-  index = i;
-  audio.src = playlist[i].src;
+/* PLAY */
+function playSong() {
+  audio.src = songs[current].url;
+  nowPlaying.innerText = "Now Playing: " + songs[current].name;
   audio.play();
-  document.getElementById("judul").innerText = playlist[i].name;
-  document.getElementById("cover").src = playlist[i].cover;
 }
 
-function play(){audio.play();}
-function pause(){audio.pause();}
-
-function next(){
-  index = (index+1)%playlist.length;
-  playIndex(index);
+/* NEXT */
+function next() {
+  current = (current + 1) % songs.length;
+  playSong();
 }
 
-function prev(){
-  index = (index-1+playlist.length)%playlist.length;
-  playIndex(index);
+/* PREV */
+function prev() {
+  current = (current - 1 + songs.length) % songs.length;
+  playSong();
 }
 
-// progress
-audio.addEventListener("timeupdate",()=>{
-  document.getElementById("progress").value =
-    (audio.currentTime/audio.duration)*100 || 0;
+/* SEARCH LANGSUNG */
+search.addEventListener("input", () => {
+  const key = search.value.toLowerCase();
+
+  const filtered = songs.filter(s =>
+    s.name.toLowerCase().includes(key)
+  );
+
+  show(filtered);
 });
 
-function seek(v){
-  audio.currentTime = (v/100)*audio.duration;
-}
-
-function volume(v){
-  audio.volume = v;
-}
-
-// SEARCH MUSIC (API iTunes)
-function searchMusic(q){
-  if(q.length < 3) return;
-
-  fetch("https://itunes.apple.com/search?term="+q+"&media=music")
-  .then(res=>res.json())
-  .then(data=>{
-    let html = "";
-    data.results.slice(0,5).forEach(song=>{
-      html += `
-      <div class="song" onclick="addSong('${song.previewUrl}','${song.trackName}','${song.artworkUrl100}')">
-        ${song.trackName}
-      </div>`;
+/* UPLOAD */
+document.getElementById("upload").addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (file) {
+    songs.push({
+      name: file.name,
+      url: URL.createObjectURL(file)
     });
-    document.getElementById("search").innerHTML = html;
-  });
-}
+    show(songs);
+  }
+});
 
-function addSong(src,name,cover){
-  playlist.push({
-    src: src,
-    name: name,
-    cover: cover
-  });
-  renderPlaylist();
-}
+/* AUTO NEXT */
+audio.addEventListener("ended", next);
 
-renderPlaylist();
+/* INIT */
+show(songs);
 </script>
 
 </body>
