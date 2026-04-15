@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Pro Music Player</title>
+<title>Spotify Style Player</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
 
@@ -10,9 +10,9 @@
 body {
   margin: 0;
   font-family: 'Poppins', sans-serif;
-  background: linear-gradient(270deg, #ff6ec4, #7873f5);
+  background: linear-gradient(270deg,#0f2027,#203a43,#2c5364);
   background-size: 400% 400%;
-  animation: bg 10s infinite;
+  animation: bg 12s infinite;
   color: white;
   display: flex;
   justify-content: center;
@@ -27,33 +27,38 @@ body {
 }
 
 .player {
-  width: 320px;
-  background: rgba(0,0,0,0.4);
+  width: 340px;
+  background: rgba(0,0,0,0.6);
   padding: 20px;
   border-radius: 20px;
-  backdrop-filter: blur(10px);
-  text-align: center;
+  backdrop-filter: blur(15px);
 }
 
 img {
   width: 100%;
   border-radius: 15px;
-  margin-bottom: 10px;
+}
+
+h3 {
+  margin: 10px 0;
 }
 
 .controls button {
   margin: 5px;
   padding: 10px;
-  border: none;
   border-radius: 10px;
+  border: none;
   cursor: pointer;
 }
 
-.playlist {
-  margin-top: 10px;
+input[type="range"] {
+  width: 100%;
+}
+
+.playlist, .search-result {
   max-height: 120px;
   overflow-y: auto;
-  text-align: left;
+  margin-top: 10px;
 }
 
 .song {
@@ -64,91 +69,138 @@ img {
 .song:hover {
   background: rgba(255,255,255,0.2);
 }
+
+input[type="text"] {
+  width: 100%;
+  padding: 8px;
+  border-radius: 10px;
+  border: none;
+}
 </style>
 </head>
 
 <body>
 
 <div class="player">
-  <h2>🎧 Music Pro</h2>
 
-  <img id="cover" src="https://via.placeholder.com/300x300?text=No+Cover">
+<img id="cover" src="https://via.placeholder.com/300x300?text=Music">
 
-  <p id="judul">No song</p>
+<h3 id="judul">No song</h3>
 
-  <!-- upload -->
-  <input type="file" accept="audio/*" onchange="uploadLagu(event)">
+<!-- SEARCH -->
+<input type="text" placeholder="Cari lagu..." onkeyup="searchMusic(this.value)">
 
-  <div class="controls">
-    <button onclick="prev()">⏮</button>
-    <button onclick="play()">▶</button>
-    <button onclick="pause()">⏸</button>
-    <button onclick="next()">⏭</button>
-  </div>
+<div class="search-result" id="search"></div>
 
-  <audio id="music"></audio>
+<!-- PLAYLIST -->
+<div class="playlist" id="playlist"></div>
 
-  <div class="playlist" id="playlist"></div>
+<!-- CONTROLS -->
+<div class="controls">
+  <button onclick="prev()">⏮</button>
+  <button onclick="play()">▶</button>
+  <button onclick="pause()">⏸</button>
+  <button onclick="next()">⏭</button>
+</div>
+
+<!-- PROGRESS -->
+<input type="range" id="progress" value="0" onchange="seek(this.value)">
+
+<!-- VOLUME -->
+<input type="range" min="0" max="1" step="0.1" onchange="volume(this.value)">
+
+<audio id="audio"></audio>
+
 </div>
 
 <script>
-let playlist = [];
-let current = 0;
+let audio = document.getElementById("audio");
+let playlist = [
+  {
+    name: "Chill Vibes",
+    src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+    cover: "https://picsum.photos/300?1"
+  },
+  {
+    name: "Night Beat",
+    src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+    cover: "https://picsum.photos/300?2"
+  }
+];
 
-const music = document.getElementById("music");
-const judul = document.getElementById("judul");
-const cover = document.getElementById("cover");
-const list = document.getElementById("playlist");
-
-function uploadLagu(e) {
-  const file = e.target.files[0];
-  const url = URL.createObjectURL(file);
-
-  const song = {
-    name: file.name,
-    src: url
-  };
-
-  playlist.push(song);
-  renderPlaylist();
-}
+let index = 0;
 
 function renderPlaylist() {
+  let list = document.getElementById("playlist");
   list.innerHTML = "";
-  playlist.forEach((s, i) => {
+  playlist.forEach((s,i)=>{
     list.innerHTML += `<div class="song" onclick="playIndex(${i})">${s.name}</div>`;
   });
 }
 
 function playIndex(i) {
-  current = i;
-  music.src = playlist[i].src;
-  music.play();
-  judul.innerText = playlist[i].name;
-
-  // cover random aesthetic
-  cover.src = "https://picsum.photos/300?random=" + Math.random();
+  index = i;
+  audio.src = playlist[i].src;
+  audio.play();
+  document.getElementById("judul").innerText = playlist[i].name;
+  document.getElementById("cover").src = playlist[i].cover;
 }
 
-function play() {
-  music.play();
+function play(){audio.play();}
+function pause(){audio.pause();}
+
+function next(){
+  index = (index+1)%playlist.length;
+  playIndex(index);
 }
 
-function pause() {
-  music.pause();
+function prev(){
+  index = (index-1+playlist.length)%playlist.length;
+  playIndex(index);
 }
 
-function next() {
-  if (playlist.length === 0) return;
-  current = (current + 1) % playlist.length;
-  playIndex(current);
+// progress
+audio.addEventListener("timeupdate",()=>{
+  document.getElementById("progress").value =
+    (audio.currentTime/audio.duration)*100 || 0;
+});
+
+function seek(v){
+  audio.currentTime = (v/100)*audio.duration;
 }
 
-function prev() {
-  if (playlist.length === 0) return;
-  current = (current - 1 + playlist.length) % playlist.length;
-  playIndex(current);
+function volume(v){
+  audio.volume = v;
 }
+
+// SEARCH MUSIC (API iTunes)
+function searchMusic(q){
+  if(q.length < 3) return;
+
+  fetch("https://itunes.apple.com/search?term="+q+"&media=music")
+  .then(res=>res.json())
+  .then(data=>{
+    let html = "";
+    data.results.slice(0,5).forEach(song=>{
+      html += `
+      <div class="song" onclick="addSong('${song.previewUrl}','${song.trackName}','${song.artworkUrl100}')">
+        ${song.trackName}
+      </div>`;
+    });
+    document.getElementById("search").innerHTML = html;
+  });
+}
+
+function addSong(src,name,cover){
+  playlist.push({
+    src: src,
+    name: name,
+    cover: cover
+  });
+  renderPlaylist();
+}
+
+renderPlaylist();
 </script>
 
 </body>
