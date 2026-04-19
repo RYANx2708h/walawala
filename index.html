@@ -2,81 +2,186 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🎧 Music App Simple</title>
+<title>Music Pro Ultimate</title>
 
 <style>
 body {
-  margin: 0;
-  font-family: Arial;
-  background: #121212;
+  background: linear-gradient(135deg, #121212, #1db954);
   color: white;
-}
-
-/* HEADER */
-header {
-  background: #1db954;
-  padding: 15px;
-  text-align: center;
-  font-size: 20px;
-}
-
-/* SEARCH */
-.search-box {
-  padding: 15px;
+  font-family: Arial;
   text-align: center;
 }
 
-.search-box input {
-  width: 90%;
-  padding: 12px;
-  border-radius: 25px;
-  border: none;
+h1 {
+  margin-top: 20px;
 }
 
-/* PLAYER */
-.player {
+input {
   margin: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
 }
 
-/* IFRAME */
-iframe {
-  width: 100%;
-  height: 250px;
-  border: none;
-  border-radius: 10px;
+#playlist {
+  margin-top: 20px;
+  max-height: 300px;
+  overflow-y: auto;
 }
+
+.song {
+  padding: 10px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.song:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.player {
+  margin-top: 30px;
+}
+
+button {
+  padding: 10px 15px;
+  margin: 5px;
+  font-size: 18px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+button:hover {
+  opacity: 0.8;
+}
+
+#progress {
+  width: 80%;
+}
+
 </style>
 </head>
 
 <body>
 
-<header>🎧 Music Web (No API)</header>
+<h1>🎧 Music Pro Ultimate</h1>
 
-<div class="search-box">
-  <input id="search" placeholder="Cari lagu lalu tekan ENTER...">
-</div>
+<input type="file" id="upload" accept="audio/*">
+<br>
+<input type="text" id="search" placeholder="Cari lagu...">
+
+<div id="playlist"></div>
 
 <div class="player">
-  <p id="now">Belum ada lagu</p>
-  <iframe id="frame"></iframe>
+  <h2 id="title">Belum ada lagu</h2>
+  
+  <input type="range" id="progress" value="0">
+
+  <div>
+    <button onclick="prevSong()">⏮</button>
+    <button onclick="playSong()">▶</button>
+    <button onclick="pauseSong()">⏸</button>
+    <button onclick="nextSong()">⏭</button>
+  </div>
 </div>
 
+<audio id="audio"></audio>
+
 <script>
-const frame = document.getElementById("frame");
-const now = document.getElementById("now");
+let songs = JSON.parse(localStorage.getItem("songs")) || [];
+let current = 0;
 
-/* SEARCH */
-document.getElementById("search").addEventListener("keydown", function(e){
-  if(e.key === "Enter"){
-    const q = this.value.trim();
-    if(!q) return;
+const audio = document.getElementById("audio");
+const playlistDiv = document.getElementById("playlist");
+const title = document.getElementById("title");
+const progress = document.getElementById("progress");
 
-    now.innerText = "Now Playing: " + q;
+// 🔄 Render Playlist
+function renderPlaylist(filter = "") {
+  playlistDiv.innerHTML = "";
+  songs
+    .filter(s => s.name.toLowerCase().includes(filter.toLowerCase()))
+    .forEach((song, index) => {
+      let div = document.createElement("div");
+      div.className = "song";
+      div.innerText = song.name;
+      div.onclick = () => playIndex(index);
+      playlistDiv.appendChild(div);
+    });
+}
 
-    frame.src = `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(q)}&autoplay=1`;
+// ▶ Play Lagu
+function playIndex(i) {
+  current = i;
+  audio.src = songs[i].url;
+  title.innerText = songs[i].name;
+  audio.play();
+}
+
+// ⏸ Pause
+function pauseSong() {
+  audio.pause();
+}
+
+// ▶ Play
+function playSong() {
+  if (songs.length > 0) {
+    playIndex(current);
   }
+}
+
+// ⏭ Next
+function nextSong() {
+  current = (current + 1) % songs.length;
+  playIndex(current);
+}
+
+// ⏮ Prev
+function prevSong() {
+  current = (current - 1 + songs.length) % songs.length;
+  playIndex(current);
+}
+
+// 📂 Upload Lagu
+document.getElementById("upload").addEventListener("change", function(e) {
+  let file = e.target.files[0];
+  if (!file) return;
+
+  let url = URL.createObjectURL(file);
+
+  songs.push({
+    name: file.name,
+    url: url
+  });
+
+  localStorage.setItem("songs", JSON.stringify(songs));
+  renderPlaylist();
 });
+
+// 🔍 Search
+document.getElementById("search").addEventListener("input", function(e) {
+  renderPlaylist(e.target.value);
+});
+
+// ⏱ Progress Bar
+audio.ontimeupdate = () => {
+  if (audio.duration) {
+    progress.value = (audio.currentTime / audio.duration) * 100;
+  }
+};
+
+progress.oninput = () => {
+  if (audio.duration) {
+    audio.currentTime = (progress.value / 100) * audio.duration;
+  }
+};
+
+// 🔁 Auto Next
+audio.onended = nextSong;
+
+// Init
+renderPlaylist();
 </script>
 
 </body>
