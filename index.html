@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Music Pro Ultimate</title>
+<title>Music Online Pro</title>
 
 <style>
 body {
@@ -12,10 +12,6 @@ body {
   text-align: center;
 }
 
-h1 {
-  margin-top: 20px;
-}
-
 input {
   margin: 10px;
   padding: 10px;
@@ -23,10 +19,8 @@ input {
   border: none;
 }
 
-#playlist {
+#results, #playlist {
   margin-top: 20px;
-  max-height: 300px;
-  overflow-y: auto;
 }
 
 .song {
@@ -39,149 +33,70 @@ input {
   background: rgba(255,255,255,0.1);
 }
 
+img {
+  width: 60px;
+  border-radius: 5px;
+  vertical-align: middle;
+}
+
 .player {
   margin-top: 30px;
 }
 
 button {
-  padding: 10px 15px;
+  padding: 10px;
   margin: 5px;
-  font-size: 18px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
 }
-
-button:hover {
-  opacity: 0.8;
-}
-
-#progress {
-  width: 80%;
-}
-
 </style>
 </head>
 
 <body>
 
-<h1>🎧 Music Pro Ultimate</h1>
+<h1>🎧 Music Online Pro</h1>
 
-<input type="file" id="upload" accept="audio/*">
-<br>
-<input type="text" id="search" placeholder="Cari lagu...">
+<input type="text" id="search" placeholder="Cari lagu online...">
 
-<div id="playlist"></div>
+<div id="results"></div>
 
 <div class="player">
   <h2 id="title">Belum ada lagu</h2>
-  
-  <input type="range" id="progress" value="0">
-
-  <div>
-    <button onclick="prevSong()">⏮</button>
-    <button onclick="playSong()">▶</button>
-    <button onclick="pauseSong()">⏸</button>
-    <button onclick="nextSong()">⏭</button>
-  </div>
+  <audio id="audio" controls></audio>
 </div>
 
-<audio id="audio"></audio>
-
 <script>
-let songs = JSON.parse(localStorage.getItem("songs")) || [];
-let current = 0;
-
+const searchInput = document.getElementById("search");
+const resultsDiv = document.getElementById("results");
 const audio = document.getElementById("audio");
-const playlistDiv = document.getElementById("playlist");
 const title = document.getElementById("title");
-const progress = document.getElementById("progress");
 
-// 🔄 Render Playlist
-function renderPlaylist(filter = "") {
-  playlistDiv.innerHTML = "";
-  songs
-    .filter(s => s.name.toLowerCase().includes(filter.toLowerCase()))
-    .forEach((song, index) => {
-      let div = document.createElement("div");
-      div.className = "song";
-      div.innerText = song.name;
-      div.onclick = () => playIndex(index);
-      playlistDiv.appendChild(div);
-    });
-}
+// 🔍 SEARCH ONLINE (iTunes API)
+searchInput.addEventListener("input", async function() {
+  let query = searchInput.value;
+  if (query.length < 3) return;
 
-// ▶ Play Lagu
-function playIndex(i) {
-  current = i;
-  audio.src = songs[i].url;
-  title.innerText = songs[i].name;
-  audio.play();
-}
+  let res = await fetch("https://itunes.apple.com/search?term=" + query + "&media=music&limit=10");
+  let data = await res.json();
 
-// ⏸ Pause
-function pauseSong() {
-  audio.pause();
-}
+  resultsDiv.innerHTML = "";
 
-// ▶ Play
-function playSong() {
-  if (songs.length > 0) {
-    playIndex(current);
-  }
-}
+  data.results.forEach(song => {
+    let div = document.createElement("div");
+    div.className = "song";
 
-// ⏭ Next
-function nextSong() {
-  current = (current + 1) % songs.length;
-  playIndex(current);
-}
+    div.innerHTML = `
+      <img src="${song.artworkUrl100}">
+      ${song.trackName} - ${song.artistName}
+    `;
 
-// ⏮ Prev
-function prevSong() {
-  current = (current - 1 + songs.length) % songs.length;
-  playIndex(current);
-}
+    div.onclick = () => {
+      audio.src = song.previewUrl;
+      title.innerText = song.trackName;
+      audio.play();
+    };
 
-// 📂 Upload Lagu
-document.getElementById("upload").addEventListener("change", function(e) {
-  let file = e.target.files[0];
-  if (!file) return;
-
-  let url = URL.createObjectURL(file);
-
-  songs.push({
-    name: file.name,
-    url: url
+    resultsDiv.appendChild(div);
   });
-
-  localStorage.setItem("songs", JSON.stringify(songs));
-  renderPlaylist();
 });
-
-// 🔍 Search
-document.getElementById("search").addEventListener("input", function(e) {
-  renderPlaylist(e.target.value);
-});
-
-// ⏱ Progress Bar
-audio.ontimeupdate = () => {
-  if (audio.duration) {
-    progress.value = (audio.currentTime / audio.duration) * 100;
-  }
-};
-
-progress.oninput = () => {
-  if (audio.duration) {
-    audio.currentTime = (progress.value / 100) * audio.duration;
-  }
-};
-
-// 🔁 Auto Next
-audio.onended = nextSong;
-
-// Init
-renderPlaylist();
 </script>
 
 </body>
