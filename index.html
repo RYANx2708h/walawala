@@ -2,101 +2,169 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Music Online Pro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ujian Online</title>
 
 <style>
 body {
-  background: linear-gradient(135deg, #121212, #1db954);
-  color: white;
-  font-family: Arial;
-  text-align: center;
+    font-family: Arial;
+    background: #0f172a;
+    color: white;
+    text-align: center;
+}
+
+.container {
+    background: #1e293b;
+    padding: 20px;
+    margin: 30px auto;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 12px;
 }
 
 input {
-  margin: 10px;
-  padding: 10px;
-  border-radius: 8px;
-  border: none;
-}
-
-#results, #playlist {
-  margin-top: 20px;
-}
-
-.song {
-  padding: 10px;
-  cursor: pointer;
-  border-bottom: 1px solid rgba(255,255,255,0.2);
-}
-
-.song:hover {
-  background: rgba(255,255,255,0.1);
-}
-
-img {
-  width: 60px;
-  border-radius: 5px;
-  vertical-align: middle;
-}
-
-.player {
-  margin-top: 30px;
+    padding: 10px;
+    width: 80%;
+    border-radius: 8px;
+    border: none;
 }
 
 button {
-  padding: 10px;
-  margin: 5px;
+    padding: 10px 20px;
+    margin-top: 15px;
+    border: none;
+    border-radius: 8px;
+    background: #22c55e;
+    color: white;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #16a34a;
+}
+
+.soal {
+    text-align: left;
+    margin-top: 15px;
+}
+
+.timer {
+    font-weight: bold;
+    color: #facc15;
 }
 </style>
 </head>
 
 <body>
 
-<h1>🎧 Music Online Pro</h1>
+<div class="container" id="login">
+<h2>LOGIN UJIAN</h2>
+<input type="text" id="nama" placeholder="Masukkan Nama"><br>
+<button onclick="mulai()">Mulai Ujian</button>
+</div>
 
-<input type="text" id="search" placeholder="Cari lagu online...">
+<div class="container" id="ujian" style="display:none;">
+<h3 class="timer" id="timer">Waktu: 60</h3>
+<div id="soal"></div>
+<button onclick="selesai()">Selesai</button>
+</div>
 
-<div id="results"></div>
-
-<div class="player">
-  <h2 id="title">Belum ada lagu</h2>
-  <audio id="audio" controls></audio>
+<div class="container" id="hasil" style="display:none;">
+<h2>HASIL UJIAN</h2>
+<p id="nilai"></p>
 </div>
 
 <script>
-const searchInput = document.getElementById("search");
-const resultsDiv = document.getElementById("results");
-const audio = document.getElementById("audio");
-const title = document.getElementById("title");
+let waktu = 60;
+let timer;
 
-// 🔍 SEARCH ONLINE (iTunes API)
-searchInput.addEventListener("input", async function() {
-  let query = searchInput.value;
-  if (query.length < 3) return;
+let soal = [
+{
+tanya: "Ibukota Indonesia?",
+a: "Jakarta",
+b: "Bandung",
+c: "Surabaya",
+jawab: "a"
+},
+{
+tanya: "2 + 2 = ?",
+a: "3",
+b: "4",
+c: "5",
+jawab: "b"
+},
+{
+tanya: "Bahasa pemrograman untuk web?",
+a: "HTML",
+b: "Photoshop",
+c: "Excel",
+jawab: "a"
+}
+];
 
-  let res = await fetch("https://itunes.apple.com/search?term=" + query + "&media=music&limit=10");
-  let data = await res.json();
+function mulai(){
+let nama = document.getElementById("nama").value;
+if(nama === ""){
+alert("Isi nama dulu!");
+return;
+}
 
-  resultsDiv.innerHTML = "";
+document.getElementById("login").style.display = "none";
+document.getElementById("ujian").style.display = "block";
 
-  data.results.forEach(song => {
-    let div = document.createElement("div");
-    div.className = "song";
+tampilSoal();
+startTimer();
+}
 
-    div.innerHTML = `
-      <img src="${song.artworkUrl100}">
-      ${song.trackName} - ${song.artistName}
-    `;
+function tampilSoal(){
+let html = "";
 
-    div.onclick = () => {
-      audio.src = song.previewUrl;
-      title.innerText = song.trackName;
-      audio.play();
-    };
-
-    resultsDiv.appendChild(div);
-  });
+soal.forEach((s, i)=>{
+html += `
+<div class="soal">
+<p>${i+1}. ${s.tanya}</p>
+<label><input type="radio" name="q${i}" value="a"> ${s.a}</label><br>
+<label><input type="radio" name="q${i}" value="b"> ${s.b}</label><br>
+<label><input type="radio" name="q${i}" value="c"> ${s.c}</label><br>
+</div>
+`;
 });
+
+document.getElementById("soal").innerHTML = html;
+}
+
+function startTimer(){
+timer = setInterval(()=>{
+waktu--;
+document.getElementById("timer").innerText = "Waktu: " + waktu;
+
+if(waktu <= 0){
+clearInterval(timer);
+selesai();
+}
+},1000);
+}
+
+function selesai(){
+clearInterval(timer);
+
+let skor = 0;
+
+soal.forEach((s, i)=>{
+let pilih = document.querySelector(`input[name=q${i}]:checked`);
+if(pilih && pilih.value === s.jawab){
+skor++;
+}
+});
+
+document.getElementById("ujian").style.display = "none";
+document.getElementById("hasil").style.display = "block";
+
+let nilaiAkhir = (skor / soal.length) * 100;
+
+document.getElementById("nilai").innerHTML =
+"Nilai kamu: <b>" + nilaiAkhir.toFixed(0) + "</b>";
+}
 </script>
 
 </body>
